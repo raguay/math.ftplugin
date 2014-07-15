@@ -1,0 +1,9 @@
+{
+    "name": "Math Mode",
+    "version": "1.0.0",
+    "description": "Adds 'math' mode",
+    "homepage": "https://customct.com",
+    "engines": {
+        "foldingtext": ">2.0.0"
+    }
+}
