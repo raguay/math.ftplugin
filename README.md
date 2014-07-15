@@ -7,7 +7,7 @@ If you have multiple lines, you can define variables. The last line with a => wi
 
 For example:
 
-`
+<pre>
 # test.math
 1 + 1 => 2
 (2 * 2)/7 => 0.5714285714285714
@@ -29,6 +29,6 @@ g-h=> [-4, -3, -2]
 g = [ 1, 2, 3]
 h = [ 5, 5, 5 ]
 g+h=> [6, 7, 8]
-`
+</pre>
 
 It uses the [math.js](http://mathjs.org/) library to evaluate the math.
