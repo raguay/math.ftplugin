@@ -138,7 +138,17 @@ define(function(require, exports, module) {
     Extensions.addTreeChanged(function(editor, e) {
         var deltas = e.deltas;
         for (var i = 0; i < deltas.length; i++) {
-            var updatedNode = deltas[i].updatedNode;
+            var updatedNode = deltas[i].updatedNode,
+                insertedNodes = deltas[i].insertedNodes,
+                length = 0;
+
+            length = insertedNodes.length;
+            for (var j = 0; j < length; j++) {
+                var each = insertedNodes[j];
+                if (inMathArea(each)) {
+                    ProcessNode(each);
+                }
+            }
 
             if (updatedNode) {
                 //
