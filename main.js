@@ -61,6 +61,77 @@ define(function(require, exports, module) {
     };
 
     //
+    // Function:      ProcessNode
+    //
+    // Description:   This function is used to process a node in the math
+    //                context. It expects the node to be passed to it.
+    //
+    function ProcessNode(node) {
+        //
+        // Calculate if needed. Get the text of the line.
+        //
+        var result = node.text();
+
+        //
+        // See if it ends in "=>". If so, process the line.
+        //
+        if(result.substr(-2) == "=>"){
+            //
+            // See if some of the previous lines had
+            // variable declarations.
+            //
+            var loop = false;
+            var pnode = node;
+            do {
+                //
+                // Look for variable lines until reach the heading.
+                //
+                pnode = pnode.previousBranch();
+                if(pnode.type() != "heading") {
+                    //
+                    // Not a heading, see if it has an evaluate command.
+                    //
+                    if(pnode.text().search("=>") < 0) {
+                        //
+                        // No evaluation, add it to the rest.
+                        //
+                        result = pnode.text() + "\n" + result;
+                    }
+                    loop = true;
+                } else {
+                    //
+                    // Hit a header. Quit looping.
+                    //
+                    loop = false;
+                }
+            } while(loop);
+
+            //
+            // Calculate the result. If Calculate returns an array, there were
+            // variables figured in as well. Just get the final result.
+            //
+            var cresult = Calculate(result);
+            if(isArray(cresult)){
+                //
+                // We will get more than on answer back. Therefore,
+                // just get the last result.
+                //
+                cresult = cresult[cresult.length-1];
+            }
+
+            //
+            // Put the result together with the original line.
+            //
+            result = node.text() + " " + cresult;
+
+            //
+            // Update the line.
+            //
+            node.setText(result);
+        }
+    };
+
+    //
     // Add a TreeChanged event handler to figure out when to run
     // a calculation.
     //
@@ -75,56 +146,9 @@ define(function(require, exports, module) {
                 //
                 if(inMathArea(updatedNode)) {
                     //
-                    // Calculate if needed. Get the text of the line.
+                    // It's a math node. Process it.
                     //
-                    var result = updatedNode.text();
-
-                    //
-                    // See if it ends in "=>". If so, process the line.
-                    //
-                    if(result.substr(-2) == "=>"){
-                        //
-                        // See if some of the previous lines had
-                        // variable declarations.
-                        //
-                        var loop = false;
-                        var pnode = updatedNode;
-                        do {
-                            pnode = pnode.previousBranch();
-                            if((pnode.text().search("=>") < 0) && (pnode.type() != "heading")) {
-                                //
-                                // We have a multiple line equation. Load it and look for more.
-                                //
-                                result = pnode.text() + "\n" + result;
-                                loop = true;
-                            } else {
-                                loop = false;
-                            }
-                        } while(loop);
-
-                        //
-                        // Calculate the result. If Calculate returns an array, there were
-                        // variables figured in as well. Just get the final result.
-                        //
-                        var cresult = Calculate(result);
-                        if(isArray(cresult)){
-                            //
-                            // We will get more than on answer back. Therefore,
-                            // just get the last result.
-                            //
-                            cresult = cresult[cresult.length-1];
-                        }
-
-                        //
-                        // Put the result together with the original line.
-                        //
-                        result = updatedNode.text() + " " + cresult;
-
-                        //
-                        // Update the line.
-                        //
-                        updatedNode.setText(result);
-                    }
+                    ProcessNode(updatedNode);
                 }
             }
         }
