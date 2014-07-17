@@ -18,10 +18,10 @@ define(function(require, exports, module) {
     var math = require("./mathjs.js");
 
     //
-    // Add the 'math' mode extension to the system.
+    // Add the 'imath' mode extension to the system.
     //
     Extensions.addMode({
-        name: 'math'
+        name: 'imath'
     });
 
     //
@@ -31,7 +31,7 @@ define(function(require, exports, module) {
     //                    a math area and is not empty.
     //
     function inMathArea(node) {
-        if((node.modeContext() == "math")&&(node.text().trim()) != "") {
+        if((node.modeContext() === 'imath')&&(node.text().trim() != "")) {
             return(true);
         } else {
             return(false);
@@ -80,31 +80,21 @@ define(function(require, exports, module) {
             // See if some of the previous lines had
             // variable declarations.
             //
-            var loop = false;
-            var pnode = node;
-            do {
+            var pnode = node,
+                text = "";
+            while(pnode && (!pnode.mode()) && (pnode.modeContext() === 'imath')) {
                 //
-                // Look for variable lines until reach the heading.
+                // Not a heading, see if it has an evaluate command.
                 //
-                pnode = pnode.previousBranch();
-                if(pnode.type() != "heading") {
+                text = pnode.text();
+                if(text.search("=>") < 0) {
                     //
-                    // Not a heading, see if it has an evaluate command.
+                    // No evaluation, add it to the rest.
                     //
-                    if(pnode.text().search("=>") < 0) {
-                        //
-                        // No evaluation, add it to the rest.
-                        //
-                        result = pnode.text() + "\n" + result;
-                    }
-                    loop = true;
-                } else {
-                    //
-                    // Hit a header. Quit looping.
-                    //
-                    loop = false;
+                    result = text + "\n" + result;
                 }
-            } while(loop);
+                pnode = pnode.previousBranch();
+            }
 
             //
             // Calculate the result. If Calculate returns an array, there were
