@@ -15,7 +15,7 @@ define(function(require, exports, module) {
     // Load the libraries I need to use.
     //
     var Extensions = require('ft/core/extensions').Extensions;
-    var math = require("./mathjs.js");
+    var mathjs = require("./mathjs.js");
 
     //
     // Add the 'imath' mode extension to the system.
@@ -45,20 +45,47 @@ define(function(require, exports, module) {
     //                    string contents. It returns the result of the calculation.
     //
     function Calculate(str) {
-        var result = 0;
+        var result = 0,
+            scope = {};
         try {
             //
             // Use the Mathjs library to evaluate the equation.
             //
-           result = math.eval(str.substr(0,str.length-2));
+           var lines = str.substr(0,str.length-2).split("\n");
+           lines.forEach(function(line){
+               var node, code;
+               code = mathjs.compile(line);
+               result = code.eval(scope);
+           });
         } catch(e) {
             //
             // Mathjs had a problem with the expressions. Return an ?
             //
-            result = "?";
+            result = "?" + " - " + e.toString();
         }
         return(result);
     };
+
+    function ProcessPreviousNodes(node) {
+        var pnode = node,
+            text = "",
+            result = "";
+        while(pnode && (!pnode.mode()) && (pnode.modeContext() === 'imath')) {
+            //
+            // Not a heading, see if it has an evaluate command.
+            //
+            text = pnode.text();
+            if(text.search("=>") < 0) {
+                //
+                // No evaluation, add it to the rest.
+                //
+                result = text + "\n" + result;
+            }
+            pnode = pnode.previousBranch();
+        }
+
+        return(result);
+    }
 
     //
     // Function:      ProcessNode
@@ -80,18 +107,17 @@ define(function(require, exports, module) {
             // See if some of the previous lines had
             // variable declarations.
             //
-            var pnode = node,
-                text = "";
-            while(pnode && (!pnode.mode()) && (pnode.modeContext() === 'imath')) {
-                //
-                // Not a heading, see if it has an evaluate command.
-                //
-                text = pnode.text();
-                if(text.search("=>") < 0) {
-                    //
-                    // No evaluation, add it to the rest.
-                    //
-                    result = text + "\n" + result;
+            result = ProcessPreviousNodes(node) + "\n" + result;
+
+            //
+            // See if other areas have variable definitions.
+            //
+            var pnode = node.parent.previousBranch();
+            while(pnode) {
+                if(pnode.modeContext() === 'imath') {
+                    if(!editor.nodeIsHiddenInFold(pnode) && !editor.isCollapsed(pnode)) {
+                        result = ProcessPreviousNodes(pnode.lastChild) + "\n" + result;
+                    }
                 }
                 pnode = pnode.previousBranch();
             }
